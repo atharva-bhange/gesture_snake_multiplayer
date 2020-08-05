@@ -34,7 +34,7 @@ class cell():
 		pygame.draw.rect(win,self.color,self.rect)
 
 
-class grid():
+class Grid():
 	def __init__(self, rows,cols):
 		self.rows = rows
 		self.cols = cols
@@ -174,8 +174,8 @@ class Snake():
 class Apple():
 	def __init__(self, g):
 		self.visible = True
-		self.width = 20
-		self.height = 20
+		self.width = 24
+		self.height = 24
 		self.color = (255,0,0)
 		self.rect = (0,0, 20, 20)
 		self.g = g
@@ -197,3 +197,17 @@ class Apple():
 		self.cell = g.grid[self.i][self.j]
 		self.x = self.cell.x
 		self.y = self.cell.y
+
+class Game:
+    def __init__(self, id):
+        self.ready = False
+        self.id = id
+        self.snakes = [0,0]
+        self.s0_alive = False
+        self.s1_alive = False
+        self.g = None
+        
+    def connected(self):
+        return self.ready
+
+

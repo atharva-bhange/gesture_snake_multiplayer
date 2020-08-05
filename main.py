@@ -2,6 +2,7 @@ import pygame, sys
 import random
 from newconstants import *
 from components import *
+from network import *
 
 
 win = pygame.display.set_mode((width, height))
@@ -36,9 +37,25 @@ def main():
 					sys.exit()
 				elif event.type == pygame.KEYDOWN :
 					if event.key == pygame.K_RETURN:
+						n = Network()
+						id = n.game.id
+						
+						G = n.game.g
+						print(id)
+						count = 0
+						while True:
+							if count > 50 :
+								print(n.game)
+								pygame.quit()
+								sys.exit()
+							count += 1
+							n.game = n.send(game)
+							if n.game.ready:
+								break
+
+						s1 = n.game.snake[id]
+						s2 = n.game.snake[1 - id]
 						menu_run = False
-
-
 
 
 		walls = [wall(0,0,width, wall_thickness,wall_color),
@@ -68,20 +85,21 @@ def main():
 
 			start_y += partition_thickness
 
-		G = grid(rows,cols)
+		
 
-		start_x = wall_thickness
-		start_y = wall_thickness
+		# start_x = wall_thickness
+		# start_y = wall_thickness
 
-		for i in range(0 , G.rows):
-			for j in range(0, G.cols):
-				G.grid[i][j] = cell(start_x , start_y, cell_thickness,cell_thickness)
-				start_x += cell_thickness + partition_thickness
-			start_x = wall_thickness
-			start_y += cell_thickness + partition_thickness
+		# for i in range(0 , G.rows):
+		# 	for j in range(0, G.cols):
+		# 		G.grid[i][j] = cell(start_x , start_y, cell_thickness,cell_thickness)
+		# 		start_x += cell_thickness + partition_thickness
+		# 	start_x = wall_thickness
+		# 	start_y += cell_thickness + partition_thickness
 
-		s1 = s1 = Snake(3,3,snake_head_width,snake_head_height,(0,255,0),'R',G)
+		# s1 = s1 = Snake(3,3,snake_head_width,snake_head_height,(0,255,0),'R',G)
 		a = Apple(G)
+
 
 		while game_run:
 
