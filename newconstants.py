@@ -34,3 +34,6 @@ headings = ['U','L','R','D']
 
 clr_list_1 = [navy, magenta, maroon]
 clr_list_2 = [purple, green, lime]
+
+
+HEADERSIZE = 10

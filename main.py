@@ -10,12 +10,14 @@ win = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Client")
 
 
-def redrawWindow(win, walls, s1,a):
+def redrawWindow(win, walls, s1,s2,a):
 
 	win.fill((173, 216, 230))
 	for w in walls:
 		w.draw(win)
 	s1.draw(win)
+	# s2.update()
+	s2.draw(win)
 	a.draw(win)
 	pygame.display.update()
 
@@ -37,27 +39,58 @@ def main():
 					sys.exit()
 				elif event.type == pygame.KEYDOWN :
 					if event.key == pygame.K_RETURN:
-						n = Network()
-						id = n.game.id
+						# try:
+						# 	n = Network()
+						# except Exception as e:
+						# 	print(e)
+						# 	pygame.quit()
+						# 	sys.exit()							
+
+						# id = n.game.id
 						
-						G = n.game.g
-						print(id)
-						count = 0
-						while True:
-							if count > 50 :
-								print(n.game)
-								pygame.quit()
-								sys.exit()
-							count += 1
-							n.game = n.send(game)
-							if n.game.ready:
-								break
+						# G = n.game.g
+						# print(id)
 
-						s1 = n.game.snake[id]
-						s2 = n.game.snake[1 - id]
-						menu_run = False
+						# while True:
+						# 	try:
+						# 		n.game = n.send(n.game)
+						# 	except Exception as e:
+						# 		print(e)
+						# 		break
+								
+						# 	if n.game.ready:
+						# 		break
+
+						# s1 = n.game.snake[id]
+						# s2 = n.game.snake[1 - id]
+						# menu_run = False
+
+						try:
+							n = Network()
+							info = n.connect()
+							client_id = int(info['id'])
+							print(client_id)
+							game = info['game']
+
+							while not game.ready:
+								game = n.send('fetch')
+
+							menu_run = False
+							s1 = game.snakes[client_id]
+							s2 = game.snakes[1 - client_id]
+							a = game.a
+							G = game.g
+							break
 
 
+						except Exception as e:
+							print(e)
+							pygame.quit()
+							sys.exit()
+
+
+
+		# Making Walls and partitions
 		walls = [wall(0,0,width, wall_thickness,wall_color),
 		wall(0,0,wall_thickness,height,wall_color),
 		wall(0,height-wall_thickness,width,wall_thickness,wall_color),
@@ -86,6 +119,7 @@ def main():
 			start_y += partition_thickness
 
 		
+		# G = Grid()
 
 		# start_x = wall_thickness
 		# start_y = wall_thickness
@@ -97,8 +131,6 @@ def main():
 		# 	start_x = wall_thickness
 		# 	start_y += cell_thickness + partition_thickness
 
-		# s1 = s1 = Snake(3,3,snake_head_width,snake_head_height,(0,255,0),'R',G)
-		a = Apple(G)
 
 
 		while game_run:
@@ -111,9 +143,18 @@ def main():
 					pygame.quit()
 					sys.exit()
 
-			s1.check_collision(a)
+			collision_status = s1.check_collision(a)
 			s1.move()
-			redrawWindow(win,walls,s1,a)
+			game.snakes[client_id] = s1
+			if collision_status:
+				game = n.send({'snake' : s1 , 'apple' : a , 'collision_status' : True})
+			else:
+				game = n.send({'snake' : s1, 'collision_status' : False})
+				a = game.a
+			
+			s2 = game.snakes[1 - client_id]	
+
+			redrawWindow(win,walls,s1,s2,a)
 
 
 main()

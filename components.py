@@ -1,4 +1,4 @@
-import pygame, sys
+import pygame, sys, pickle
 import random
 from newconstants import *
 
@@ -155,6 +155,9 @@ class Snake():
 			self.add_body()
 			a.change_pos(self.g)
 			a.visible = True
+			return True
+		else:
+			return False
 
 	def wall_collision(self):
 		self.moving = False
@@ -197,6 +200,8 @@ class Apple():
 		self.cell = g.grid[self.i][self.j]
 		self.x = self.cell.x
 		self.y = self.cell.y
+		self.update()
+
 
 class Game:
     def __init__(self, id):
@@ -205,9 +210,63 @@ class Game:
         self.snakes = [0,0]
         self.s0_alive = False
         self.s1_alive = False
+        self.a = None
         self.g = None
         
     def connected(self):
         return self.ready
+
+
+def custom_encode(data,mode):
+	if mode == "pickle":
+		# print("encoding pickled data")
+		data = pickle.dumps(data)
+		data = bytes(f"{len(data):<{HEADERSIZE}}" , "utf-8")+data		
+		return data
+
+	elif mode == "string":
+		data = bytes(f"{len(data):<{HEADERSIZE}}"+data , "utf-8")		
+		return data
+
+
+
+def custom_recv_decode(conn, mode):
+	if mode == "pickle":
+		
+		full_msg = b""
+		new_msg = True
+
+		while True:
+			
+			try:
+				msg = conn.recv(4096)
+			except Exception as e:
+				print(e)
+			if new_msg:
+				#print("Printing header of recv data",msg[:HEADERSIZE])
+				msglen = int(msg[:HEADERSIZE])
+				new_msg = False
+
+			full_msg += msg
+
+			if len(full_msg)-HEADERSIZE == msglen:
+				
+				return pickle.loads(full_msg[HEADERSIZE:])
+
+	
+	elif mode == "string":
+		full_msg = b""
+		new_msg = True
+
+		while True:
+			msg = conn.recv(4096)
+			if new_msg:
+				msglen = msg[:HEADERSIZE]	
+				new_msg = False
+
+			full_msg += msg
+
+			if len(full_msg)-HEADERSIZE == msglen:
+				return full_msg[HEADERSIZE:].decode("utf-8") 
 
 
