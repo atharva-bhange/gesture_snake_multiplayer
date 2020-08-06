@@ -215,7 +215,7 @@ def threaded_client(conn , p, game_id):
 
 
 s = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
-s.bind((socket.gethostname(), port))
+s.bind(('127.0.0.1', port))
 
 
 
