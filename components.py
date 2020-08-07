@@ -1,7 +1,9 @@
 import pygame, sys, pickle
 import random
-from newconstants import *
+from constants import *
+from time import sleep
 
+pygame.font.init()
 
 class wall():
 	def __init__(self,x,y,width,height,color):
@@ -45,21 +47,23 @@ class Grid():
 		self.grid = [[0 for i in range(self.cols)] for j in range(self.rows)]
 
 class Snake():
-	def __init__(self, i, j, width, height, color, heading, g):
+	def __init__(self, i, j, width, height, color,color_name, heading, g):
 		self.score = 0
+		self.dead = False
 		self.moving = True
 		self.i = i
 		self.j = j
 		self.width = width
 		self.height = height
 		self.color = color
+		self.color_name = color_name
 		self.g = g
 		self.rect = (g.grid[i][j].x, g.grid[i][j].y, width, height)
 		self.heading = heading
 		self.vel = 1
 		self.body = []
 		self.frame_count = 0
-		self.frame_bound = 5
+		self.frame_bound = 4
 
 	def move(self):
 		if self.moving:
@@ -83,7 +87,7 @@ class Snake():
 			if self.heading == 'L':
 				if self.frame_count >= self.frame_bound:
 					if self.j == 0:
-						self.wall_collision()
+						self.deadly_collision()
 						return
 					else: 
 						self.j -= self.vel
@@ -94,7 +98,7 @@ class Snake():
 			elif self.heading == 'U':
 				if self.frame_count >= self.frame_bound:
 					if self.i == 0:
-						self.wall_collision()
+						self.deadly_collision()
 						return
 					else:
 						self.i -= self.vel
@@ -105,7 +109,7 @@ class Snake():
 			elif self.heading == 'R':		
 				if self.frame_count >= self.frame_bound:
 					if self.j == cols-1:
-						self.wall_collision()
+						self.deadly_collision()
 						return
 					else:
 						self.j += self.vel
@@ -116,7 +120,7 @@ class Snake():
 			else:	
 				if self.frame_count >= self.frame_bound:
 					if self.i == rows-1:
-						self.wall_collision()
+						self.deadly_collision()
 						return
 					else:
 						self.i += self.vel
@@ -147,11 +151,24 @@ class Snake():
 		for i in self.body:
 			pygame.draw.rect(win,self.color,i)
 
-	def check_collision(self,a):
-		# checking with apple
+	def check_collision(self,a, eat_sound,s2):
+		
+		# checking with other snake
+		if self.i == s2.i and self.j == s2.j:
+			pass
+		else:
+			for b in s2.body:
+				if b[0] == self.rect[0] and b[1] == self.rect[1]:
+					self.deadly_collision(dead_sound)
+				else:
+					pass	
+
+
+		# checking with apple			
 		if a.i == self.i and a.j == self.j:
 			a.visible = False
 			self.score += 1
+			a.eaten(eat_sound)
 			self.add_body()
 			a.change_pos(self.g)
 			a.visible = True
@@ -159,8 +176,10 @@ class Snake():
 		else:
 			return False
 
-	def wall_collision(self):
+	def deadly_collision(self):
+
 		self.moving = False
+		self.dead = True
 
 	def add_body(self):
 		self.body.append(self.rect)
@@ -183,16 +202,18 @@ class Apple():
 		self.rect = (0,0, 20, 20)
 		self.g = g
 		self.cell = 0
+		self.image = None
 		self.change_pos(self.g)
 
 
 	def update(self):
-		self.rect = (self.x, self.y, self.width, self.height)
+		self.rect = (self.x, self.y,)
 
-	def draw(self,win):
+	def draw(self,win, image_surface):
 		if self.visible:
 			self.update()
-			pygame.draw.rect(win,self.color,self.rect)
+			# pygame.draw.rect(win,self.color,self.rect)
+			win.blit(image_surface , self.rect)
 
 	def change_pos(self,g):
 		self.i = random.randint(0,rows-1)
@@ -202,14 +223,18 @@ class Apple():
 		self.y = self.cell.y
 		self.update()
 
+	def eaten(self,eat_sound):
+		eat_sound.play()	
+
+
+
 
 class Game:
     def __init__(self, id):
         self.ready = False
         self.id = id
         self.snakes = [0,0]
-        self.s0_alive = False
-        self.s1_alive = False
+        self.alive = [True , True]
         self.a = None
         self.g = None
         
@@ -244,7 +269,10 @@ def custom_recv_decode(conn, mode):
 				print(e)
 			if new_msg:
 				#print("Printing header of recv data",msg[:HEADERSIZE])
-				msglen = int(msg[:HEADERSIZE])
+				try:
+					msglen = int(msg[:HEADERSIZE])
+				except:
+					return -1	
 				new_msg = False
 
 			full_msg += msg
@@ -268,5 +296,70 @@ def custom_recv_decode(conn, mode):
 
 			if len(full_msg)-HEADERSIZE == msglen:
 				return full_msg[HEADERSIZE:].decode("utf-8") 
+
+class EndScreen():
+	def __init__(self,won,msg,s1,s2):
+		self.won = won
+		self.msg = msg
+		self.s1 = s1
+		self.s2 = s2
+		if self.won:
+			#won
+			self.t = Text("You Won The Game!!!!", green, 35,height/2 -100)
+
+		else:
+			#lost
+			self.t = Text("You Lost The Game....", red, 35,height/2 -100)
+
+		self.score = Text("Your Score : "+str(s1.score)+"    "+"Oponent Score : "+str(s2.score),black , 35 , height/2)	
+		self.press_enter = Text("Please Press Enter To Restart", green, 35,height/2 +100)
+
+
+
+	def draw(self,win):
+		win.fill(white)
+		self.t.draw(win)
+		self.score.draw(win)
+		self.press_enter.draw(win)
+
+		pygame.display.update()
+
+	def wait_key_press(self,win):
+
+		draw_end = True
+		while draw_end:
+			for event in pygame.event.get():
+				if event.type == pygame.QUIT:
+					menu_run = False
+					pygame.quit()
+					sys.exit()
+				elif event.type == pygame.KEYDOWN :
+					if event.key == pygame.K_RETURN:
+						print("breaking out")
+						draw_end = False
+						break
+
+			self.draw(win)		
+
+class Text():
+	def __init__(self, text, color, size, y_shift):
+		self.text = text
+		self.color = color
+		self.size = size
+		self.y_shift = y_shift
+		self.font = pygame.font.Font("assets/Purisa.ttf", self.size)
+		self.screen_text = self.font.render(self.text , True, self.color)
+		self.rect = self.screen_text.get_rect()
+		self.x = round(width/2) - round(self.rect.width/2) 
+		self.y = self.y_shift
+		self.width = self.rect.width
+		self.height = self.rect.height
+		self.display = True
+	def draw(self,win):
+		if self.display:
+			win.blit(self.screen_text, (self.x, self.y))	
+
+
+
 
 
