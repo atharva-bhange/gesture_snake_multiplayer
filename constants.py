@@ -40,5 +40,5 @@ clr_list_2 = [purple, green, lime]
 
 HEADERSIZE = 10
 
-server = '192.168.1.136'
+server = '192.168.1.149'
 port = 5555

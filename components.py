@@ -159,7 +159,7 @@ class Snake():
 		else:
 			for b in s2.body:
 				if b[0] == self.rect[0] and b[1] == self.rect[1]:
-					self.deadly_collision(dead_sound)
+					self.deadly_collision()
 				else:
 					pass	
 
