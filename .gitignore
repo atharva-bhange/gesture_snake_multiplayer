@@ -7,7 +7,7 @@ original_asset_files
 
 # C extensions
 *.so
-
+.vscode
 # Distribution / packaging
 snakeenv
 .Python
